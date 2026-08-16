@@ -14,3 +14,6 @@
 - [x] Add a daily 8:30 AM IST monitoring configuration, with an idempotent scheduled endpoint and an owner notification path prepared for production deployment.
 - [x] Add unit tests for matching priority, draft subject enforcement, approval gating, and application status transitions.
 - [x] Verify the build, test suite, database migration, and responsive dashboard flows.
+- [x] Extract the user-provided QA resume and reconcile candidate profile fields with the confirmed experience, skills, qualification, and contact details.
+- [x] Activate the published daily 8:30 AM IST tracker monitoring schedule and validate the first scheduled configuration.
+- [x] Record the ongoing workflow boundary: daily verified search, ranking, GitHub report update, and draft generation only; no automatic job submission or email send.
