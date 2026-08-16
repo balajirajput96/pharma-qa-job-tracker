@@ -10,7 +10,7 @@
 - [x] Build an application tracker with To Apply, Applied, Follow-up, Interview Scheduled, Offer, and Rejected statuses.
 - [x] Build an approval queue that generates a company-specific email draft using the exact required subject line and never sends without a user action.
 - [x] Add a Gmail-ready sending boundary that opens Gmail only after explicit approval and logs the manually confirmed sent status.
-- [ ] Add a GitHub-ready daily-report export boundary for version-controlled vacancy and company CSV updates.
+- [x] Add a GitHub-ready daily-report export boundary for version-controlled vacancy and company CSV updates.
 - [x] Add a daily 8:30 AM IST monitoring configuration, with an idempotent scheduled endpoint and an owner notification path prepared for production deployment.
 - [x] Add unit tests for matching priority, draft subject enforcement, approval gating, and application status transitions.
-- [ ] Verify the build, test suite, database migration, and responsive dashboard flows.
+- [x] Verify the build, test suite, database migration, and responsive dashboard flows.

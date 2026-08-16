@@ -6,6 +6,7 @@ import {
   createApplicationDraft,
   createMonitoringRun,
   ensureCandidateProfile,
+  exportDailyVacancyCsv,
   getApplicationsForUser,
   getCompanyDirectory,
   getDashboardData,
@@ -51,6 +52,10 @@ export const appRouter = router({
       const profile = await ensureCandidateProfile(ctx.user);
       return getDashboardData(profile);
     }),
+    dailyReport: protectedProcedure.query(async () => ({
+      filename: `pharma-qa-daily-report-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv: await exportDailyVacancyCsv(),
+    })),
     directory: protectedProcedure.input(z.object({ query: z.string().max(160).optional() })).query(async ({ input }) => getCompanyDirectory(input.query)),
     profile: protectedProcedure.query(async ({ ctx }) => ensureCandidateProfile(ctx.user)),
     saveProfile: protectedProcedure.input(profileInput).mutation(async ({ ctx, input }) => updateCandidateProfile(ctx.user.id, input)),

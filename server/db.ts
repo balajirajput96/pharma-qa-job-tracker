@@ -117,6 +117,31 @@ export function locationPriority(location: string) {
   return 0;
 }
 
+export function inferVacancyLocation(title: string, currentLocation: string) {
+  const text = `${title} ${currentLocation}`.toLowerCase();
+  const matches: Array<[string, RegExp]> = [
+    ["Vadodara, Gujarat", /vadodara/],
+    ["Ahmedabad, Gujarat", /ahmedabad|gota|matoda/],
+    ["Halol, Gujarat", /halol/],
+    ["Sanand, Gujarat", /sanand/],
+    ["Ankleshwar, Gujarat", /ankleshwar/],
+    ["Bharuch, Gujarat", /bharuch/],
+    ["Dahej, Gujarat", /dahej/],
+    ["Savli, Gujarat", /savli/],
+    ["Gujarat", /gujarat/],
+    ["Baddi, Himachal Pradesh", /baddi/],
+    ["Goa", /goa|margao/],
+    ["Hyderabad, Telangana", /hyderabad/],
+    ["Sikkim", /sikkim|rangpo/],
+  ];
+  return matches.find(([, expression]) => expression.test(text))?.[0] ?? currentLocation;
+}
+
+export function inferVacancyRoute(title: string, currentRoute: "walk_in" | "direct" | "unverified") {
+  if (currentRoute !== "unverified") return currentRoute;
+  return /walk[-\s]?in|walkin/i.test(title) ? "walk_in" : currentRoute;
+}
+
 export function scoreVacancy(input: { title: string; eligibility: string; location: string; route: string; twoYearHint: boolean }) {
   const text = `${input.title} ${input.eligibility}`.toLowerCase();
   let score = locationPriority(input.location);
@@ -453,12 +478,15 @@ export async function getDashboardData(profile: typeof candidateProfiles.$inferS
       ...row,
       vacancy: {
         ...row.vacancy,
+        location: inferVacancyLocation(row.vacancy.title, row.vacancy.location),
+        employmentRoute: inferVacancyRoute(row.vacancy.title, row.vacancy.employmentRoute),
+        locationPriority: locationPriority(inferVacancyLocation(row.vacancy.title, row.vacancy.location)),
         matchScore: scoreVacancyForProfile({
           title: row.vacancy.title,
           eligibility: row.vacancy.eligibility ?? "",
-          location: row.vacancy.location,
-          route: row.vacancy.employmentRoute,
-          twoYearHint: row.vacancy.twoYearMatch,
+          location: inferVacancyLocation(row.vacancy.title, row.vacancy.location),
+          route: inferVacancyRoute(row.vacancy.title, row.vacancy.employmentRoute),
+          twoYearHint: row.vacancy.twoYearMatch || /1\s*[-–to]+\s*3|2\s*[-–to]+\s*\d|\b2\s*years?\b/i.test(`${row.vacancy.title} ${row.vacancy.eligibility ?? ""}`),
         }, profile),
       },
       contacts: contactsByCompany.get(row.company.id) ?? [],
@@ -481,6 +509,50 @@ export async function getCompanyDirectory(query?: string) {
   const contactsByCompany = new Map<number, typeof contacts>();
   contacts.forEach(contact => contactsByCompany.set(contact.companyId, [...(contactsByCompany.get(contact.companyId) ?? []), contact]));
   return companyRows.map(company => ({ ...company, contacts: contactsByCompany.get(company.id) ?? [] }));
+}
+
+function csvCell(value: string | number | null | undefined) {
+  const normalized = String(value ?? "").replace(/"/g, '""');
+  return `"${normalized}"`;
+}
+
+export type DailyVacancyReportRow = {
+  company: string;
+  title: string;
+  department: string | null;
+  location: string;
+  route: string;
+  eligibility: string | null;
+  salary: string | null;
+  twoYearMatch: boolean;
+  matchScore: number;
+  sourceUrl: string;
+};
+
+export function buildDailyVacancyCsv(rows: DailyVacancyReportRow[]) {
+  const header = ["Company", "Role", "Department", "Location", "Route", "Eligibility", "Salary", "2-year match", "Match score", "Public source URL"];
+  const lines = rows.map(row => [
+    row.company, row.title, row.department, row.location, row.route, row.eligibility, row.salary,
+    row.twoYearMatch ? "Yes" : "No", row.matchScore, row.sourceUrl,
+  ].map(csvCell).join(","));
+  return [header.map(csvCell).join(","), ...lines].join("\n");
+}
+
+export async function exportDailyVacancyCsv() {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  await seedResearchDirectory();
+  const rows = await db
+    .select({ vacancy: vacancies, company: companies })
+    .from(vacancies)
+    .innerJoin(companies, eq(vacancies.companyId, companies.id))
+    .orderBy(desc(vacancies.matchScore), desc(vacancies.locationPriority));
+  return buildDailyVacancyCsv(rows.map(row => ({
+    company: row.company.name.replace(/\s*\.+\s*$/g, ""), title: row.vacancy.title, department: row.vacancy.department,
+    location: inferVacancyLocation(row.vacancy.title, row.vacancy.location), route: inferVacancyRoute(row.vacancy.title, row.vacancy.employmentRoute),
+    eligibility: row.vacancy.eligibility, salary: row.vacancy.salaryText, twoYearMatch: row.vacancy.twoYearMatch,
+    matchScore: row.vacancy.matchScore, sourceUrl: row.vacancy.sourceUrl,
+  })));
 }
 
 export async function getApplicationsForUser(userId: number) {

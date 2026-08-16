@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { APPLICATION_SUBJECT, DAILY_MONITORING_CRON, applicationStatusAfterConfirmedSend, canMarkDraftAsSent, locationPriority, scoreVacancy, scoreVacancyForProfile } from "./db";
+import { APPLICATION_SUBJECT, DAILY_MONITORING_CRON, applicationStatusAfterConfirmedSend, buildDailyVacancyCsv, canMarkDraftAsSent, inferVacancyLocation, inferVacancyRoute, locationPriority, scoreVacancy, scoreVacancyForProfile } from "./db";
 
 describe("job matching priority", () => {
   it("prioritizes Vadodara over India-wide locations", () => {
     expect(locationPriority("Vadodara, Gujarat")).toBeGreaterThan(locationPriority("Hyderabad, Telangana"));
+  });
+
+  it("recovers a Gujarat location and walk-in route from a sourced vacancy title", () => {
+    const title = "Walk-In Interview on 18 August 2026 for Production (OSD), Quality Assurance (IPQA & QMS) at Gota, Ahmedabad";
+    expect(inferVacancyLocation(title, "India — see source")).toBe("Ahmedabad, Gujarat");
+    expect(inferVacancyRoute(title, "unverified")).toBe("walk_in");
   });
 
   it("ranks a Gujarat QA/IPQA OSD walk-in above a generic role", () => {
@@ -60,5 +66,23 @@ describe("approval-gated application drafts", () => {
 
   it("moves an application to Applied only after the user confirms sending", () => {
     expect(applicationStatusAfterConfirmedSend()).toBe("applied");
+  });
+
+  it("exports a source-cited CSV with a stable report shape", () => {
+    const csv = buildDailyVacancyCsv([{
+      company: "Bharat Parenterals",
+      title: "IPQA Officer",
+      department: "QA / IPQA",
+      location: "Vadodara, Gujarat",
+      route: "walk_in",
+      eligibility: "B.Pharm, 1–3 years",
+      salary: null,
+      twoYearMatch: true,
+      matchScore: 96,
+      sourceUrl: "https://www.bplindia.in/lifebpl.html",
+    }]);
+    expect(csv).toContain('"Public source URL"');
+    expect(csv).toContain('"Bharat Parenterals"');
+    expect(csv).toContain('"Yes"');
   });
 });

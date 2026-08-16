@@ -2,17 +2,26 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Building2, CalendarDays, ExternalLink, Mail, MapPin, Phone, Plus, Radar, Sparkles } from "lucide-react";
+import { Building2, CalendarDays, Download, ExternalLink, Mail, MapPin, Phone, Plus, Radar, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 function routeLabel(route: string) {
   return route === "walk_in" ? "Walk-in" : route === "direct" ? "Direct vacancy" : "Source review";
 }
 
+function cleanCompanyName(name: string) {
+  return name.replace(/\s*\.+\s*$/g, "").trim();
+}
+
+function displayLocation(location: string) {
+  return /see cited source|not every company had/i.test(location) ? "Location not verified — see source" : location;
+}
+
 export default function Dashboard() {
   const utils = trpc.useUtils();
   const jobs = trpc.jobTracker.dashboard.useQuery();
   const schedule = trpc.jobTracker.monitoringSchedule.useQuery();
+  const dailyReport = trpc.jobTracker.dailyReport.useQuery(undefined, { enabled: false });
   const activateSchedule = trpc.jobTracker.activateDailySchedule.useMutation({
     onSuccess: async () => { await utils.jobTracker.monitoringSchedule.invalidate(); toast.success("Daily 8:30 AM IST monitoring has been activated."); },
     onError: error => toast.error(error.message),
@@ -30,6 +39,17 @@ export default function Dashboard() {
     },
     onError: error => toast.error(error.message),
   });
+  const downloadReport = async () => {
+    const result = await dailyReport.refetch();
+    if (!result.data) return toast.error("The report could not be generated.");
+    const url = URL.createObjectURL(new Blob([result.data.csv], { type: "text/csv;charset=utf-8" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = result.data.filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+    toast.success("Source-cited daily CSV exported. Add it to your connected GitHub repository for version history.");
+  };
 
   const items = jobs.data ?? [];
   const matched = items.filter(item => item.vacancy.matchScore >= 70);
@@ -46,9 +66,9 @@ export default function Dashboard() {
           <h1 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-slate-950">Your QA/IPQA job radar</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Ranked around your two-year QA, IPQA and OSD tablet-compression profile. Gujarat opportunities lead; India-wide roles remain visible as backups.</p>
         </div>
-        <Button className="bg-slate-950 hover:bg-slate-800" onClick={() => runMonitoring.mutate()} disabled={runMonitoring.isPending}>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={downloadReport} disabled={dailyReport.isFetching}><Download className="mr-2 h-4 w-4" />{dailyReport.isFetching ? "Preparing…" : "Export daily CSV"}</Button><Button className="bg-slate-950 hover:bg-slate-800" onClick={() => runMonitoring.mutate()} disabled={runMonitoring.isPending}>
           <Radar className="mr-2 h-4 w-4" /> {runMonitoring.isPending ? "Refreshing…" : "Refresh monitored research"}
-        </Button>
+        </Button></div>
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -90,8 +110,8 @@ export default function Dashboard() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2"><Badge className="bg-slate-950 hover:bg-slate-950">Match {item.vacancy.matchScore}</Badge><Badge variant="outline" className="text-teal-800 border-teal-200">{routeLabel(item.vacancy.employmentRoute)}</Badge>{item.vacancy.twoYearMatch && <Badge variant="outline" className="text-indigo-700 border-indigo-200">2-year band</Badge>}</div>
                   <h3 className="mt-3 text-lg font-semibold leading-6 text-slate-950">{item.vacancy.title}</h3>
-                  <p className="mt-1 text-sm font-medium text-slate-700">{item.company.name}</p>
-                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600"><span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{item.vacancy.location}</span>{item.vacancy.walkInDateText && <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-slate-400" />{item.vacancy.walkInDateText}</span>}{email && <span className="inline-flex items-center gap-1.5"><Mail className="h-4 w-4 text-slate-400" />{email.contactValue}</span>}{phone && <span className="inline-flex items-center gap-1.5"><Phone className="h-4 w-4 text-slate-400" />{phone.contactValue}</span>}</div>
+                  <p className="mt-1 text-sm font-medium text-slate-700">{cleanCompanyName(item.company.name)}</p>
+                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600"><span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4 text-slate-400" />{displayLocation(item.vacancy.location)}</span>{item.vacancy.walkInDateText && <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-slate-400" />{item.vacancy.walkInDateText}</span>}{email && <span className="inline-flex items-center gap-1.5"><Mail className="h-4 w-4 text-slate-400" />{email.contactValue}</span>}{phone && <span className="inline-flex items-center gap-1.5"><Phone className="h-4 w-4 text-slate-400" />{phone.contactValue}</span>}</div>
                   {item.vacancy.eligibility && <p className="mt-4 text-sm leading-6 text-slate-600"><span className="font-medium text-slate-700">Eligibility / salary:</span> {item.vacancy.eligibility}</p>}
                 </div>
                 <div className="flex shrink-0 flex-row gap-2 lg:flex-col"><Button variant="outline" size="sm" asChild><a href={item.vacancy.sourceUrl} target="_blank" rel="noreferrer">Source <ExternalLink className="ml-2 h-3.5 w-3.5" /></a></Button><Button size="sm" className="bg-teal-700 hover:bg-teal-800" onClick={() => createDraft.mutate({ vacancyId: item.vacancy.id })} disabled={createDraft.isPending}><Plus className="mr-1.5 h-3.5 w-3.5" />Draft application</Button></div>
