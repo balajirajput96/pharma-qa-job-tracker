@@ -23,10 +23,10 @@
 - [x] Document connected services and keep final job applications and emails approval-gated.
 - [x] Apply candidate-profile scoring before vacancy result truncation so strong lower-ranked matches are not excluded as the database grows.
 - [x] Implement and test an executable daily GitHub publish step that generates the CSV, commits only changed files, pushes to the configured remote, and records publish success or failure.
-- [ ] Audit the active 8:30 AM IST monitor, GitHub remote, Antigravity CLI, Gemini connector, and available Google workspace services.
+- [x] Audit the active 8:30 AM IST monitor, GitHub remote, Antigravity CLI, Gemini connector, and available Google workspace services.
 - [x] Launch Gemini CLI; local Google OAuth callback timed out, but the documented configured API-key fallback was verified with a successful non-interactive connectivity test.
 - [x] Verify Gemini Spark BETA availability on the signed-in Google Pro account and create a separate daily 08:30 Pharma QA/IPQA job-monitoring schedule with approval-gated instructions.
 - [x] Revalidate the approval queue end-to-end after the restart, including the approval-only Gmail handoff and sent-status persistence path.
 - [x] Record the user's preference for fully automated daily research, ranking, GitHub reporting and draft generation while preserving mandatory manual approval for every external email or application submission.
 - [x] Verify the Bharat Parenterals draft reached user-recorded sent status in the approval queue; external mail delivery remains independently unverified.
-- [ ] Publish any verified workflow additions to the private GitHub repository and document service-specific limitations.
+- [x] Publish verified workflow additions to the private GitHub repository and document service-specific limitations.
