@@ -679,6 +679,23 @@ export async function createMonitoringRun(triggerType: "manual" | "scheduled") {
   return Number(result[0].insertId);
 }
 
+export function formatGitHubPublishSummary(status: "pushed" | "no_changes" | "failed" | "dry_run", reportPath: string, detail?: string) {
+  const suffix = detail ? ` ${detail}` : "";
+  return `GitHub daily report publish ${status}: ${reportPath}.${suffix}`.trim();
+}
+
+export async function recordGitHubPublishOutcome(status: "pushed" | "no_changes" | "failed" | "dry_run", reportPath: string, detail?: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(monitoringRuns).values({
+    triggerType: "scheduled",
+    status: status === "failed" ? "failed" : "completed",
+    summary: formatGitHubPublishSummary(status, reportPath, detail),
+    newVacancyCount: 0,
+    completedAt: new Date(),
+  });
+}
+
 export type ScheduledVacancyInput = {
   companyName: string;
   title: string;

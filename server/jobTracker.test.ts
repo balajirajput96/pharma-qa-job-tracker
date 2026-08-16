@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { APPLICATION_SUBJECT, DAILY_MONITORING_CRON, applicationStatusAfterConfirmedSend, buildDailyVacancyCsv, canMarkDraftAsSent, inferVacancyLocation, inferVacancyRoute, locationPriority, rankVacanciesForProfile, scoreVacancy, scoreVacancyForProfile } from "./db";
+import { APPLICATION_SUBJECT, DAILY_MONITORING_CRON, applicationStatusAfterConfirmedSend, buildDailyVacancyCsv, canMarkDraftAsSent, formatGitHubPublishSummary, inferVacancyLocation, inferVacancyRoute, locationPriority, rankVacanciesForProfile, scoreVacancy, scoreVacancyForProfile } from "./db";
 
 describe("job matching priority", () => {
   it("prioritizes Vadodara over India-wide locations", () => {
@@ -96,5 +96,10 @@ describe("approval-gated application drafts", () => {
     expect(csv).toContain('"Public source URL"');
     expect(csv).toContain('"Bharat Parenterals"');
     expect(csv).toContain('"Yes"');
+  });
+
+  it("formats tracker-visible GitHub publish outcomes for success and failure", () => {
+    expect(formatGitHubPublishSummary("pushed", "reports/report.csv")).toContain("pushed: reports/report.csv");
+    expect(formatGitHubPublishSummary("failed", "reports/report.csv", "remote rejected push")).toContain("remote rejected push");
   });
 });

@@ -17,9 +17,9 @@
 - [x] Extract the user-provided QA resume and reconcile candidate profile fields with the confirmed experience, skills, qualification, and contact details.
 - [x] Activate the published daily 8:30 AM IST tracker monitoring schedule and validate the first scheduled configuration.
 - [x] Record the ongoing workflow boundary: daily verified search, ranking, GitHub report update, and draft generation only; no automatic job submission or email send.
-- [ ] Verify the official Google Antigravity CLI availability and open its supported login path for the user's selected Google account.
-- [ ] Verify which Gemini and Google services can be connected through the selected account and current enabled integrations.
-- [ ] Verify Julius scheduling availability and configure it only if the user's account exposes a supported schedule workflow.
-- [ ] Document connected services and keep final job applications and emails approval-gated.
-- [ ] Apply candidate-profile scoring before vacancy result truncation so strong lower-ranked matches are not excluded as the database grows.
-- [ ] Add a server-side GitHub reporting handoff design that does not rely on a user manually committing downloaded CSV files.
+- [x] Verify the official Google Antigravity CLI availability and open its supported login path for the user's selected Google account.
+- [x] Verify which Gemini and Google services can be connected through the selected account and current enabled integrations.
+- [x] Verify Julius scheduling availability and attempt configuration; browser OAuth did not establish a usable Julius session, so no Julius schedule was created.
+- [x] Document connected services and keep final job applications and emails approval-gated.
+- [x] Apply candidate-profile scoring before vacancy result truncation so strong lower-ranked matches are not excluded as the database grows.
+- [x] Implement and test an executable daily GitHub publish step that generates the CSV, commits only changed files, pushes to the configured remote, and records publish success or failure.
