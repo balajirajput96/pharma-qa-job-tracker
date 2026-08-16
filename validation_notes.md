@@ -10,3 +10,4 @@
 - The approval queue clearly states that a draft must be approved before Gmail opens and that the user—not the application—must press Gmail Send before recording the sent status.
 - The final dashboard loads the corrected Gujarat-first metrics and has an authenticated **Export daily CSV** control. The export action begins the protected report-generation flow without creating an application or sending an email.
 - The exported report was confirmed in the browser download directory as `pharma-qa-daily-report-2026-08-16.csv`. The profile, directory, applications, approvals and dashboard layouts use mobile-first Tailwind breakpoints (`sm`, `md` and `lg`) with stacked controls below desktop width; the authenticated desktop flow was reviewed end-to-end.
+- The private GitHub repository `balajirajput96/pharma-qa-job-tracker` was verified in the authenticated browser and the current tracker source was pushed to its `main` branch as commit `d9d25dd`.
