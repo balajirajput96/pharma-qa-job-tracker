@@ -152,9 +152,11 @@ export function scoreVacancy(input: { title: string; eligibility: string; locati
   return Math.min(score, 100);
 }
 
+export type RankingProfile = Pick<typeof candidateProfiles.$inferSelect, "experienceYears" | "skills" | "preferredLocations">;
+
 export function scoreVacancyForProfile(
   input: { title: string; eligibility: string; location: string; route: string; twoYearHint: boolean },
-  profile: typeof candidateProfiles.$inferSelect,
+  profile: RankingProfile,
 ) {
   const baseScore = scoreVacancy(input);
   const preferredLocations = profile.preferredLocations.toLowerCase().split(",").map(value => value.trim()).filter(Boolean);
@@ -457,6 +459,36 @@ export async function updateCandidateProfile(userId: number, input: Partial<type
   return (await db.select().from(candidateProfiles).where(eq(candidateProfiles.userId, userId)).limit(1))[0];
 }
 
+type VacancyRankingInput = {
+  vacancy: Pick<typeof vacancies.$inferSelect, "title" | "eligibility" | "location" | "employmentRoute" | "twoYearMatch" | "matchScore" | "locationPriority">;
+};
+
+export function rankVacanciesForProfile<T extends VacancyRankingInput>(rows: T[], profile: RankingProfile, limit = 80) {
+  return rows
+    .map(row => {
+      const location = inferVacancyLocation(row.vacancy.title, row.vacancy.location);
+      const route = inferVacancyRoute(row.vacancy.title, row.vacancy.employmentRoute);
+      return {
+        ...row,
+        vacancy: {
+          ...row.vacancy,
+          location,
+          employmentRoute: route,
+          locationPriority: locationPriority(location),
+          matchScore: scoreVacancyForProfile({
+            title: row.vacancy.title,
+            eligibility: row.vacancy.eligibility ?? "",
+            location,
+            route,
+            twoYearHint: row.vacancy.twoYearMatch || /1\s*[-–to]+\s*3|2\s*[-–to]+\s*\d|\b2\s*years?\b/i.test(`${row.vacancy.title} ${row.vacancy.eligibility ?? ""}`),
+          }, profile),
+        },
+      };
+    })
+    .sort((left, right) => right.vacancy.matchScore - left.vacancy.matchScore || right.vacancy.locationPriority - left.vacancy.locationPriority)
+    .slice(0, limit);
+}
+
 export async function getDashboardData(profile: typeof candidateProfiles.$inferSelect) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -465,33 +497,15 @@ export async function getDashboardData(profile: typeof candidateProfiles.$inferS
     .select({ vacancy: vacancies, company: companies })
     .from(vacancies)
     .innerJoin(companies, eq(vacancies.companyId, companies.id))
-    .orderBy(desc(vacancies.matchScore), desc(vacancies.locationPriority))
-    .limit(80);
-  const companyIds = Array.from(new Set(rows.map(row => row.company.id)));
+    .orderBy(desc(vacancies.createdAt));
+  const rankedRows = rankVacanciesForProfile(rows, profile);
+  const companyIds = Array.from(new Set(rankedRows.map(row => row.company.id)));
   const contacts = companyIds.length
     ? await db.select().from(companyContacts).where(inArray(companyContacts.companyId, companyIds))
     : [];
   const contactsByCompany = new Map<number, typeof contacts>();
   contacts.forEach(contact => contactsByCompany.set(contact.companyId, [...(contactsByCompany.get(contact.companyId) ?? []), contact]));
-  return rows
-    .map(row => ({
-      ...row,
-      vacancy: {
-        ...row.vacancy,
-        location: inferVacancyLocation(row.vacancy.title, row.vacancy.location),
-        employmentRoute: inferVacancyRoute(row.vacancy.title, row.vacancy.employmentRoute),
-        locationPriority: locationPriority(inferVacancyLocation(row.vacancy.title, row.vacancy.location)),
-        matchScore: scoreVacancyForProfile({
-          title: row.vacancy.title,
-          eligibility: row.vacancy.eligibility ?? "",
-          location: inferVacancyLocation(row.vacancy.title, row.vacancy.location),
-          route: inferVacancyRoute(row.vacancy.title, row.vacancy.employmentRoute),
-          twoYearHint: row.vacancy.twoYearMatch || /1\s*[-–to]+\s*3|2\s*[-–to]+\s*\d|\b2\s*years?\b/i.test(`${row.vacancy.title} ${row.vacancy.eligibility ?? ""}`),
-        }, profile),
-      },
-      contacts: contactsByCompany.get(row.company.id) ?? [],
-    }))
-    .sort((left, right) => right.vacancy.matchScore - left.vacancy.matchScore);
+  return rankedRows.map(row => ({ ...row, contacts: contactsByCompany.get(row.company.id) ?? [] }));
 }
 
 export async function getCompanyDirectory(query?: string) {

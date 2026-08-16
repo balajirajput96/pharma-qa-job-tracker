@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { APPLICATION_SUBJECT, DAILY_MONITORING_CRON, applicationStatusAfterConfirmedSend, buildDailyVacancyCsv, canMarkDraftAsSent, inferVacancyLocation, inferVacancyRoute, locationPriority, scoreVacancy, scoreVacancyForProfile } from "./db";
+import { APPLICATION_SUBJECT, DAILY_MONITORING_CRON, applicationStatusAfterConfirmedSend, buildDailyVacancyCsv, canMarkDraftAsSent, inferVacancyLocation, inferVacancyRoute, locationPriority, rankVacanciesForProfile, scoreVacancy, scoreVacancyForProfile } from "./db";
 
 describe("job matching priority", () => {
   it("prioritizes Vadodara over India-wide locations", () => {
@@ -45,6 +45,18 @@ describe("job matching priority", () => {
       twoYearHint: true,
     }, profile);
     expect(score).toBeGreaterThanOrEqual(96);
+  });
+
+  it("applies candidate-specific scoring before reducing the dashboard to its result limit", () => {
+    const profile = { experienceYears: 2, skills: "IPQA, Tablet Compression, OSD", preferredLocations: "Vadodara, Gujarat" } as Parameters<typeof rankVacanciesForProfile>[1];
+    const genericRows = Array.from({ length: 80 }, (_, index) => ({
+      company: { id: index },
+      vacancy: { title: "Production Executive", eligibility: "5 years experience", location: "India", employmentRoute: "direct" as const, twoYearMatch: false, matchScore: 90, locationPriority: 0 },
+    }));
+    const exactMatch = { company: { id: 81 }, vacancy: { title: "IPQA Officer - Tablet Compression / OSD", eligibility: "B.Pharm, 1-3 years", location: "Vadodara, Gujarat", employmentRoute: "walk_in" as const, twoYearMatch: true, matchScore: 40, locationPriority: 0 } };
+    const ranked = rankVacanciesForProfile([...genericRows, exactMatch], profile, 80);
+    expect(ranked.some(row => row.company.id === 81)).toBe(true);
+    expect(ranked[0]?.company.id).toBe(81);
   });
 });
 
