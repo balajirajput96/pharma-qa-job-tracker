@@ -252,6 +252,9 @@ async function upsertVacancyFromResearch(
     location: string;
     sourceUrl: string;
     eligibility: string;
+    department?: string;
+    salaryText?: string;
+    walkInDateText?: string;
     route: "walk_in" | "direct" | "unverified";
     twoYearMatch: boolean;
   },
@@ -269,12 +272,12 @@ async function upsertVacancyFromResearch(
     twoYearHint: input.twoYearMatch,
   });
   const values = {
-    department: /qa|quality|ipqa/i.test(input.title) ? "QA / IPQA" : null,
+    department: input.department?.slice(0, 255) || (/qa|quality|ipqa/i.test(input.title) ? "QA / IPQA" : null),
     location: input.location,
     employmentRoute: input.route,
-    walkInDateText: /august|aug|walk/i.test(input.title) ? input.title.slice(0, 255) : null,
+    walkInDateText: input.walkInDateText?.slice(0, 255) || null,
     eligibility: input.eligibility || null,
-    salaryText: /salary|ctc|₹|rs\.?/i.test(input.eligibility) ? input.eligibility.slice(0, 500) : null,
+    salaryText: input.salaryText?.slice(0, 500) || null,
     status: "unverified" as const,
     twoYearMatch: input.twoYearMatch,
     locationPriority: locationPriority(input.location),
@@ -631,6 +634,44 @@ export async function createApplicationDraft(user: User, vacancyId: number) {
   return Number(result[0].insertId);
 }
 
+export async function createVerifiedContactDraftsForSources(userId: number, sourceUrls: string[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const user = (await db.select().from(users).where(eq(users.id, userId)).limit(1))[0];
+  if (!user) throw new Error("Candidate user not found");
+  const uniqueSources = Array.from(new Set(sourceUrls.filter(sourceUrl => /^https?:\/\//i.test(sourceUrl))));
+  if (uniqueSources.length === 0) return { created: 0, skippedNoVerifiedContact: 0, skippedExistingDraft: 0 };
+  const rows = await db
+    .select({ vacancy: vacancies, company: companies })
+    .from(vacancies)
+    .innerJoin(companies, eq(vacancies.companyId, companies.id))
+    .where(inArray(vacancies.sourceUrl, uniqueSources));
+  let created = 0;
+  let skippedNoVerifiedContact = 0;
+  let skippedExistingDraft = 0;
+  for (const row of rows) {
+    const contact = (await db.select().from(companyContacts).where(and(
+      eq(companyContacts.companyId, row.company.id),
+      inArray(companyContacts.contactType, ["hr", "careers"]),
+    )).limit(1))[0];
+    if (!contact) {
+      skippedNoVerifiedContact += 1;
+      continue;
+    }
+    const existing = (await db.select().from(applicationDrafts).where(and(
+      eq(applicationDrafts.userId, userId),
+      eq(applicationDrafts.vacancyId, row.vacancy.id),
+    )).limit(1))[0];
+    if (existing) {
+      skippedExistingDraft += 1;
+      continue;
+    }
+    await createApplicationDraft(user, row.vacancy.id);
+    created += 1;
+  }
+  return { created, skippedNoVerifiedContact, skippedExistingDraft };
+}
+
 export async function getDraftsForUser(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database unavailable");
@@ -701,6 +742,7 @@ export type ScheduledVacancyInput = {
   title: string;
   location: string;
   sourceUrl: string;
+  department?: string;
   eligibility?: string;
   salaryText?: string;
   route?: "walk_in" | "direct" | "unverified";
@@ -730,6 +772,9 @@ export async function ingestScheduledVacancies(records: ScheduledVacancyInput[])
       location: record.location,
       sourceUrl: record.sourceUrl,
       eligibility: [record.eligibility, record.salaryText].filter(Boolean).join(" "),
+      department: record.department,
+      salaryText: record.salaryText,
+      walkInDateText: record.walkInDateText,
       route: record.route ?? "unverified",
       twoYearMatch: record.twoYearMatch ?? false,
     });

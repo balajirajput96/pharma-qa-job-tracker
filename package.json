@@ -12,6 +12,8 @@
     "test": "vitest run",
     "report:publish": "tsx scripts/publishDailyReport.mts",
     "report:publish:github": "tsx scripts/publishDailyReportToGitHub.mts",
+    "research:import:fresh": "tsx scripts/importFreshVacancies.mts",
+    "research:drafts:verified": "tsx scripts/createVerifiedDrafts.mts",
     "report:publish:github:dry-run": "REPORT_PUBLISH_DRY_RUN=1 tsx scripts/publishDailyReportToGitHub.mts",
     "db:push": "drizzle-kit generate && drizzle-kit migrate"
   },
