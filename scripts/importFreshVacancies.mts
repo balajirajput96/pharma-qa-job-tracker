@@ -1,10 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { ingestScheduledVacancies, type ScheduledVacancyInput } from "../server/db.ts";
-
 const defaultInput = "/home/ubuntu/fresh_verified_pharma_qa_vacancies_2026-08-17.csv";
-const inputPath = resolve(process.argv[2] ?? defaultInput);
-
+const inputPath = resolve(process.argv.slice(2).find(argument => argument !== "--") ?? defaultInput);
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
