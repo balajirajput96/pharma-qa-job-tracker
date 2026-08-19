@@ -21,10 +21,18 @@ import {
 } from "@/components/ui/sidebar";
 import { startLogin } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Building2, ClipboardCheck, LayoutDashboard, LogOut, PanelLeft, Send, UserRound } from "lucide-react";
+import {
+  Building2,
+  ClipboardCheck,
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
+  Send,
+  UserRound,
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
 const menuItems = [
@@ -56,7 +64,7 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <DashboardLayoutSkeleton />;
   }
 
   if (!user) {
@@ -68,7 +76,8 @@ export default function DashboardLayout({
               Sign in to continue
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              Access to this dashboard requires authentication. Continue to
+              launch the login flow.
             </p>
           </div>
           <Button
@@ -171,7 +180,9 @@ function DashboardLayoutContent({
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-semibold tracking-tight truncate">PharmaTrack</span>
+                  <span className="font-semibold tracking-tight truncate">
+                    PharmaTrack
+                  </span>
                 </div>
               ) : null}
             </div>
