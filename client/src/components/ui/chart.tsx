@@ -194,9 +194,8 @@ function ChartTooltipContent({
                 )}
               >
                 {formatter &&
-                item.name &&
-                (typeof item.value === "string" ||
-                  typeof item.value === "number") ? (
+                (typeof item.value === "number" || typeof item.value === "string") &&
+                typeof item.name === "string" ? (
                   formatter(item.value, item.name, item, index, item.payload)
                 ) : (
                   <>
@@ -261,9 +260,7 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: React.ComponentProps<"div"> & {
-  payload?: React.ComponentProps<
-    typeof RechartsPrimitive.DefaultLegendContent
-  >["payload"];
+  payload?: RechartsPrimitive.LegendPayload[];
   verticalAlign?: RechartsPrimitive.LegendProps["verticalAlign"];
   hideIcon?: boolean;
   nameKey?: string;
