@@ -26,5 +26,9 @@ jobs:
         run: pnpm test
       - name: Validate versioned research artifacts
         run: pnpm run research:validate:artifacts
+      - name: Validate credential-safe automation manifest
+        run: pnpm run automation:validate-manifest
+      - name: Validate redacted execution-record generator
+        run: pnpm run automation:record -- --check
       - name: Check formatting
         run: pnpm exec prettier --check scripts .github/workflows
