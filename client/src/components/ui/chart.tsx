@@ -194,7 +194,8 @@ function ChartTooltipContent({
                 )}
               >
                 {formatter &&
-                (typeof item.value === "number" || typeof item.value === "string") &&
+                (typeof item.value === "number" ||
+                  typeof item.value === "string") &&
                 typeof item.name === "string" ? (
                   formatter(item.value, item.name, item, index, item.payload)
                 ) : (
