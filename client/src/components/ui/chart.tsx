@@ -1,6 +1,11 @@
 // Controlled Lab Ledger: charts use restrained, auditable visual treatment and explicit configuration.
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
+import type { Payload as LegendPayload } from "recharts/types/component/DefaultLegendContent";
+import type {
+  NameType,
+  ValueType,
+} from "recharts/types/component/DefaultTooltipContent";
 
 import { cn } from "@/lib/utils";
 
@@ -117,7 +122,7 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: RechartsPrimitive.TooltipContentProps<number | string, number | string> &
+}: RechartsPrimitive.TooltipProps<ValueType, NameType> &
   React.ComponentProps<"div"> & {
     hideLabel?: boolean;
     hideIndicator?: boolean;
@@ -261,7 +266,7 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: React.ComponentProps<"div"> & {
-  payload?: RechartsPrimitive.LegendPayload[];
+  payload?: LegendPayload[];
   verticalAlign?: RechartsPrimitive.LegendProps["verticalAlign"];
   hideIcon?: boolean;
   nameKey?: string;
