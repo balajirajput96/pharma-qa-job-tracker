@@ -1,7 +1,8 @@
 // Controlled Lab Ledger: charts use restrained, auditable visual treatment and explicit configuration.
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
-import type { Payload as LegendPayload } from "recharts/types/component/DefaultLegendContent";
+import type { LegendPayload } from "recharts/types/component/DefaultLegendContent";
+import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import type {
   NameType,
   ValueType,
@@ -108,6 +109,22 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
+type ChartTooltipContentProps = React.ComponentProps<"div"> &
+  Pick<
+    TooltipContentProps<ValueType, NameType>,
+    "formatter" | "labelFormatter"
+  > & {
+    active?: TooltipContentProps<ValueType, NameType>["active"];
+    payload?: TooltipContentProps<ValueType, NameType>["payload"];
+    label?: TooltipContentProps<ValueType, NameType>["label"];
+    labelClassName?: string;
+    hideLabel?: boolean;
+    hideIndicator?: boolean;
+    indicator?: "line" | "dot" | "dashed";
+    nameKey?: string;
+    labelKey?: string;
+  };
+
 function ChartTooltipContent({
   active,
   payload,
@@ -122,14 +139,7 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: RechartsPrimitive.TooltipProps<ValueType, NameType> &
-  React.ComponentProps<"div"> & {
-    hideLabel?: boolean;
-    hideIndicator?: boolean;
-    indicator?: "line" | "dot" | "dashed";
-    nameKey?: string;
-    labelKey?: string;
-  }) {
+}: ChartTooltipContentProps) {
   const { config } = useChart();
 
   const tooltipLabel = React.useMemo(() => {
