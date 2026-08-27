@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "project": "pharma-qa-job-tracker",
+  "credentialPolicy": {
+    "storage": "Official provider credential stores and managed environment variables only",
+    "repositoryPolicy": "No passwords, API keys, OAuth codes, access tokens, cookies, session data, or raw terminal history"
+  },
+  "activeAutomation": [
+    {
+      "name": "Daily Pharma QA/IPQA Job Monitor",
+      "schedule": "Daily 08:30 Asia/Calcutta",
+      "capabilities": [
+        "public-source job research",
+        "Gujarat-first ranking",
+        "source-cited report generation",
+        "approval-only draft preparation",
+        "GitHub report publishing when tracker database is available"
+      ],
+      "exclusions": [
+        "automatic email sending",
+        "automatic job application submission",
+        "credential extraction",
+        "security-control bypass"
+      ]
+    },
+    {
+      "name": "Daily repository maintenance",
+      "schedule": "Daily 08:00 Asia/Calcutta",
+      "capabilities": [
+        "locked dependency installation",
+        "TypeScript validation",
+        "unit tests",
+        "source-artifact header validation",
+        "formatting validation"
+      ],
+      "exclusions": [
+        "database writes",
+        "browser-session access",
+        "Gmail sending",
+        "repository mutations"
+      ]
+    }
+  ],
+  "reusableScripts": [
+    "scripts/importFreshVacancies.mts",
+    "scripts/createVerifiedDrafts.mts",
+    "scripts/publishDailyReportToGitHub.mts",
+    "scripts/validateResearchArtifacts.mts",
+    "scripts/recordAutomationRun.mts"
+  ]
+}
